@@ -6,7 +6,6 @@
   "author": "Hongbin Li <hblee12294@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.16.3",
-    "three": "^0.96.0"
+    "express": "^4.16.3"
   }
 }
