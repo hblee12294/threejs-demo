@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Grid</title>
+  <title>Framework</title>
   <script src="js/three.js"></script>
   <style>
     html, body {
@@ -42,7 +42,7 @@
     function initCamera() {
       camera = new THREE.PerspectiveCamera(45, width / height)
       camera.position.x = 0
-      camera.position.y = 1400
+      camera.position.y = 1000
       camera.position.z = 0
       camera.up.x = 0
       camera.up.y = 0
@@ -62,27 +62,24 @@
       scene.add(light)
     }
 
+    // let cube
     function initObject() {
       let geometry = new THREE.Geometry()
-      geometry.vertices.push(new THREE.Vector3(-500, 0, 0))
-      geometry.vertices.push(new THREE.Vector3(500, 0, 0))
+      let material = new THREE.LineBasicMaterial({
+        vertexColors: THREE.VertexColors,
+        // Not working on Windows
+        linewidth: 10
+      })
+      let color1 = new THREE.Color(0x444444), color2 = new THREE.Color(0xff0000)
       
-      for (let i = 0; i <= 20; i++) {
-        let line = new THREE.Line(geometry, new THREE.LineBasicMaterial({
-          color: 0x000000,
-          opacity: 0.2
-        }))
-        line.position.z = (i * 50) - 500
-        scene.add(line)
+      const p1 = new THREE.Vector3(-100, 0, 100)
+      const p2 = new THREE.Vector3(100, 0, -100)
+      geometry.vertices.push(p1)
+      geometry.vertices.push(p2)
+      geometry.colors.push(color1, color2)
 
-        line = new THREE.Line(geometry, new THREE.LineBasicMaterial({
-          color: 0x000000,
-          opacity: 0.2
-        }))
-        line.position.x = (i * 50) - 500
-        line.rotation.y = 90 * Math.PI / 180
-        scene.add(line)
-      }
+      const line = new THREE.Line(geometry, material, THREE.LineSegments)
+      scene.add(line)
     }
 
     function render() {
