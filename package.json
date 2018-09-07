@@ -1,0 +1,12 @@
+{
+  "name": "treejs-demo",
+  "version": "1.0.0",
+  "main": "app.js",
+  "repository": "git@github.com:hblee12294/treejs-demo.git",
+  "author": "Hongbin Li <hblee12294@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.3",
+    "three": "^0.96.0"
+  }
+}
