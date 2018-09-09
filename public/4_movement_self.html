@@ -6,7 +6,6 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Movement</title>
   <script src="js/three.js"></script>
-  <script src="js/stats.js"></script>
   <style>
     html, body {
       margin: 0;
@@ -29,7 +28,6 @@
     const height = document.getElementById('canvas-frame').clientHeight
   
     let renderer
-    let stats
     function initThree() {
       renderer = new THREE.WebGLRenderer({
         antialias: true
@@ -37,12 +35,6 @@
       renderer.setSize(width, height)
       document.getElementById('canvas-frame').appendChild(renderer.domElement)
       renderer.setClearColor(0xFFFFFF, 1.0)
-
-      stats = new Stats()
-      stats.domElement.style.position = 'absolute'
-      stats.domElement.style.left = '20px'
-      stats.domElement.style.top = '20px'
-      document.getElementById('canvas-frame').appendChild(stats.domElement)
     }
 
     let camera
@@ -91,12 +83,10 @@
     // }
 
     function animation() {
-      mesh.position.x += 0.5
+      mesh.position.x -= 0.5
       camera.position.y -= 1
       renderer.render(scene, camera)
       requestAnimationFrame(animation)
-
-      stats.update();
     }
 
     function threeStart() {
