@@ -64,13 +64,9 @@
 
     let light
     function initLight() {
-      light = new THREE.PointLight(0x00ff00)
-      light.position.set(0, 0, 100)
+      light = new THREE.AmbientLight(0x00ff00)
+      light.position.set(100, 100, 200)
       scene.add(light)
-
-      // light = new THREE.AmbientLight(0x00ff00)
-      // light.position.set(100, 100, 200)
-      // scene.add(light)
 
       light = new THREE.DirectionalLight(0xff0000)
       light.position.set(0, 0, 1)

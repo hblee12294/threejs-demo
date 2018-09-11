@@ -49,11 +49,11 @@
     function initCamera() {
       camera = new THREE.PerspectiveCamera(45, width / height, 1, 10000)
       camera.position.x = 600
-      camera.position.y = 0
+      camera.position.y = 600
       camera.position.z = 600
       camera.up.x = 0
-      camera.up.y = 1
-      camera.up.z = 0
+      camera.up.y = 0
+      camera.up.z = 1
       camera.lookAt(0, 0, 0)
     }
 
@@ -64,15 +64,7 @@
 
     let light
     function initLight() {
-      light = new THREE.PointLight(0x00ff00)
-      light.position.set(0, 0, 100)
-      scene.add(light)
-
-      // light = new THREE.AmbientLight(0x00ff00)
-      // light.position.set(100, 100, 200)
-      // scene.add(light)
-
-      light = new THREE.DirectionalLight(0xff0000)
+      light = new THREE.DirectionalLight(0xff0000, 1)
       light.position.set(0, 0, 1)
       scene.add(light)
     }
@@ -85,30 +77,6 @@
       })
       mesh = new THREE.Mesh(geometry, material)
       mesh.position = new THREE.Vector3(0, 0, 0)
-      scene.add(mesh)
-
-      mesh = new THREE.Mesh(geometry, material)
-      mesh.position.set(-300, 0, 0)
-      scene.add(mesh)
-
-      mesh = new THREE.Mesh(geometry, material)
-      mesh.position.set(300, 0, 0)
-      scene.add(mesh)
-
-      mesh = new THREE.Mesh(geometry, material)
-      mesh.position.set(0, -150, 0)
-      scene.add(mesh)
-
-      mesh = new THREE.Mesh(geometry, material)
-      mesh.position.set(0, 150, 0)
-      scene.add(mesh)
-
-      mesh = new THREE.Mesh(geometry, material)
-      mesh.position.set(0, 0, -100)
-      scene.add(mesh)
-
-      mesh = new THREE.Mesh(geometry, material)
-      mesh.position.set(0, 0, 400)
       scene.add(mesh)
     }
 
