@@ -4,10 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Rotation</title>
+  <title>3D Model</title>
   <script src="js/three.js"></script>
   <script src="js/stats.js"></script>
-  <script src="js/tween.js"></script>
+  <script src="js/VTKLoader.js"></script>
+  <script src="js/TrackballControls.js"></script>
   <style>
     html, body {
       margin: 0;
@@ -48,11 +49,22 @@
     }
 
     let camera
+    let control
     function initCamera() {
-      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000)
-      camera.position.set(100, 300, 600)
-      camera.up.y = 1
-      camera.lookAt(0, 0, 0)
+      camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.01, 1e10)
+      camera.position.set(0, 20, 20)
+      camera.lookAt(new THREE.Vector3(0, 0, 0))
+      controls = new THREE.TrackballControls(camera)
+
+      controls.rotateSpeed = 5.0
+      controls.zoomSpeed = 5
+      controls.panSpeed = 2
+      
+      controls.noZoom = false
+      controls.noPan = false
+
+      controls.staticMoving = true
+      controls.dynamicDampingFactor = 0.3
     }
 
     let scene
@@ -62,39 +74,40 @@
 
     let light
     function initLight() {
-      light = new THREE.AmbientLight(0xff0000)
-      light.position.set(100, 100, 200)
+      light = new THREE.AmbientLight(0x444444)
+      scene.add(light)
+  
+      light = new THREE.PointLight(0xffffff)
+      light.position.set(0, 50, 50)
+
+      light.castShadow = true
       scene.add(light)
     }
 
-    let mesh
-    function initObject() {
-      const geometry = new THREE.BoxGeometry(100, 100, 100)
-      for (let i = 0; i < geometry.faces.length; i += 2) {
-        let hex = Math.random() * 0xffffff
-        geometry.faces[i].color.setHex(hex)
-        geometry.faces[i+1].color.setHex(hex)
-      }
+    function initModel() {
+      const loader = new THREE.VTKLoader()
+      // loader.addEventListener('load', function(event) {
+      //   const geometry = event.content
+      //   mesh = new THREE.Mesh(geometry, material)
+      //   mesh.position.setY(-0.09)
+      //   scene.add(mesh)
+      // })
+      loader.load('models/vtk/bunny.vtk', function(geometry) {
+        geometry.computeFaceNormals()
+        geometry.computeVertexNormals()
 
-      const material = new THREE.MeshBasicMaterial({
-        vertexColors: THREE.FaceColors
+        const material = new THREE.MeshLambertMaterial({
+          color: 0xaaaaaa
+        })
+        const group = new THREE.Mesh(geometry, material)
+        group.scale.set(10, 10, 10)
+        scene.add(group)
       })
-
-      mesh = new THREE.Mesh(geometry, material)
-      mesh.position = new THREE.Vector3(0, 0, 0)
-      scene.add(mesh)
-    }
-
-    function initGrid() {
-      const helper = new THREE.GridHelper(1000, 20, 0x0000ff, 0x808080)
-      scene.add(helper)
     }
 
     function animation() {
-      mesh.rotation.x += 0.01
-      mesh.rotation.y += 0.01
-      mesh.rotation.z += 0.01
       renderer.render(scene, camera)
+      controls.update()
       requestAnimationFrame(animation)
 
       stats.update()
@@ -104,6 +117,7 @@
       camera.aspect = window.innerWidth / window.innerHeight
       camera.updateProjectionMatrix()
       renderer.setSize(window.innerWidth, window.innerHeight)
+      controls.handleResize()
     }
 
     function threeStart() {
@@ -112,8 +126,7 @@
       initCamera()
       initScene()
       initLight()
-      initGrid()
-      initObject()
+      initModel()
       animation()
     }
   </script>
