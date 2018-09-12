@@ -7,7 +7,6 @@
   <title>Textrue</title>
   <script src="js/three.js"></script>
   <script src="js/stats.js"></script>
-  <script src="js/clock.js"></script>
   <style>
     html, body {
       margin: 0;
@@ -51,6 +50,10 @@
       camera.position.x = 0
       camera.position.y = 0
       camera.position.z = 400
+      // camera.up.x = 0
+      // camera.up.y = 1
+      // camera.up.z = 0
+      // camera.lookAt(0, 0, 0)
     }
 
     let scene
@@ -60,9 +63,9 @@
 
     let light
     function initLight() {
-      // light = new THREE.AmbientLight(0x00ff00)
-      // light.position.set(100, 100, 200)
-      // scene.add(light)
+      // // light = new THREE.AmbientLight(0x00ff00)
+      // // light.position.set(100, 100, 200)
+      // // scene.add(light)
 
       // light = new THREE.DirectionalLight(0xff0000)
       // light.position.set(0, 0, 1)
@@ -70,24 +73,21 @@
     }
 
     let mesh
-    let texture
     function initObject() {
-      const geometry =  new THREE.CubeGeometry(150, 150, 150)
-      texture = new THREE.Texture(canvas)
-      // clear POT warning
-      texture.minFilter = THREE.LinearFilter
-      const material = new THREE.MeshBasicMaterial({ map: texture })
-      texture.needsUpdate = true
+      const geometry =  new THREE.PlaneGeometry(500, 300, 1, 1)
+      geometry.vertices[0].uv = new THREE.Vector2(0, 0)
+      geometry.vertices[1].uv = new THREE.Vector2(2, 0)
+      geometry.vertices[2].uv = new THREE.Vector2(2, 2)
+      geometry.vertices[3].uv = new THREE.Vector2(2, 2)
+
+      const texture = new THREE.TextureLoader().load('textures/leaves.jpg')
+      
+      material = new THREE.MeshBasicMaterial({ map: texture })
       mesh = new THREE.Mesh(geometry, material)
       scene.add(mesh)
     }
 
     function animation() {
-      texture.needsUpdate = true
-      
-      mesh.rotation.y -= 0.01
-      mesh.rotation.x -= 0.01
-
       renderer.render(scene, camera)
       requestAnimationFrame(animation)
 
@@ -101,7 +101,6 @@
     }
 
     function threeStart() {
-      clock()
       initThree()
       initCamera()
       initScene()
