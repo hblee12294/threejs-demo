@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Rotation</title>
+  <script src="js/three.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/tween.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+    div#canvas-frame {
+      border: none;
+      width: 100%;
+      height: 600px;
+      background-color: #eee;
+    }
+  </style>
+</head>
+
+<body onload="threeStart();">
+  <div id="canvas-frame"></div>
+
+  <script>
+    let renderer
+    function initThree() {
+      renderer = new THREE.WebGLRenderer({
+        antialias: true
+      })
+      renderer.setSize(window.innerWidth, window.innerHeight)
+      renderer.setClearColor(0xffffff, 1.0)
+      document.getElementById('canvas-frame').appendChild(renderer.domElement)
+
+      window.addEventListener('resize', onWindowResize, false)
+    }
+
+    let stats
+    function initStats() {
+      stats = new Stats()
+      stats.domElement.style.position = 'absolute'
+      stats.domElement.style.left = '20px'
+      stats.domElement.style.top = '20px'
+      document.getElementById('canvas-frame').appendChild(stats.domElement)
+    }
+
+    let camera
+    function initCamera() {
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000)
+      camera.position.set(100, 300, 600)
+      camera.up.y = 1
+      camera.lookAt(0, 0, 0)
+    }
+
+    let scene
+    function initScene() {
+      scene = new THREE.Scene()
+    }
+
+    let light
+    function initLight() {
+      light = new THREE.AmbientLight(0xff0000)
+      light.position.set(100, 100, 200)
+      scene.add(light)
+    }
+
+    let mesh
+    function initObject() {
+      const geometry = new THREE.BoxGeometry(100, 100, 100)
+      for (let i = 0; i < geometry.faces.length; i += 2) {
+        let hex = Math.random() * 0xffffff
+        geometry.faces[i].color.setHex(hex)
+        geometry.faces[i+1].color.setHex(hex)
+      }
+
+      const material = new THREE.MeshBasicMaterial({
+        vertexColors: THREE.FaceColors
+      })
+
+      mesh = new THREE.Mesh(geometry, material)
+      mesh.position = new THREE.Vector3(0, 0, 0)
+      scene.add(mesh)
+    }
+
+    function initGrid() {
+      const helper = new THREE.GridHelper(1000, 20, 0x0000ff, 0x808080)
+      scene.add(helper)
+    }
+
+    function animation() {
+      mesh.rotation.x += 0.01
+      mesh.rotation.y += 0.01
+      mesh.rotation.z += 0.01
+      renderer.render(scene, camera)
+      requestAnimationFrame(animation)
+
+      stats.update()
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight
+      camera.updateProjectionMatrix()
+      renderer.setSize(window.innerWidth, window.innerHeight)
+    }
+
+    function threeStart() {
+      initThree()
+      initStats()
+      initCamera()
+      initScene()
+      initLight()
+      initGrid()
+      initObject()
+      animation()
+    }
+  </script>
+</body>
+</html>
