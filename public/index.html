@@ -3,11 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width">
-<title>Multiple elements</title>
+<title>Intereactive particles</title>
 <meta name="description" content="Demonstration of grouping content in pure CSS parallax scrolling website">
 <script src="js/three.js"></script>
 <script src="js/stats.js"></script>
-<script src="js/GLTFLoader.js"></script>
 <script src="js/OrbitControls.js"></script>
 <style>
   * {
@@ -27,167 +26,159 @@
     padding: 5px;
     text-align: center;
   }
-  #content {
-    position: absolute;
-    top: 0;
-    width: 100%;
-    z-index: 1;
-    padding: 3em 0 0 0;
-  }
-  a {
-    color: #0080ff;
-  }
-  #c {
-    position: absolute;
-    left: 0;
-    width: 100%;
-    height: 100%;
-  }
-  .list-item {
-    display: inline-block;
-    margin: 1em;
-    padding: 1em;
-    box-shadow: 1px 2px 4px 0px rgba(0,0,0,.25)
-  }
-  .list-item .scene {
-    width: 200px;
-    height: 200px;
-  }
-  .list-item .description {
-    color: #888;
-    width: 200px;
-    margin-top: .5em;
-  }
 </style>
 </head>
 
 <body>
-  <canvas id="c"></canvas>
+  <div id="container"></div>
+  <div id="info"></div>
 
-  <div id="content"></div>
+  <script type="x-shader/x-vertex" id="vertexshader">
+    attribute float size;
+    attribute vec3 customColor;
 
-  <script id="template" type="notjs">
-    <div class="scene"></div>
-    <div class="description">Scene $</div>
+    varying vec3 vColor;
+
+    void main() {
+      vColor = customColor;
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      gl_PointSize = size * (300.0 / -mvPosition.z);
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  </script>
+
+  <script type="x-shader/x-fragment" id="fragmentshader">
+    uniform vec3 color;
+    uniform sampler2D texture;
+
+    varying vec3 vColor;
+
+    void main() {
+      gl_FragColor = vec4(color * vColor, 1.0);
+      gl_FragColor = gl_FragColor * texture2D(texture, gl_PointCoord);
+      if (gl_FragColor.a < ALPHATEST) discard;
+    }
   </script>
   
   <script>
-    let canvas
-    let scenes = [], renderer
+    let renderer, scene, camera, stats
+    let particles, uniforms
+
+    const PARTICLE_SIZE = 20
+
+    let raycaster, intersects
+    let mouse, INTERSECTED
 
     init()
     animate()
 
     function init() {
-      canvas = document.getElementById('c')
+      container = document.getElementById('container')
 
-      const geometries = [
-        new THREE.BoxBufferGeometry(1, 1, 1),
-        new THREE.SphereBufferGeometry(0.5, 12, 8),
-        new THREE.DodecahedronBufferGeometry(0.5),
-        new THREE.CylinderBufferGeometry(0.5, 0.5, 1, 12)
-      ]
+      scene = new THREE.Scene()
 
-      const template = document.getElementById('template').textContent
-      const content = document.getElementById('content')
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000)
+      camera.position.z = 250
 
-      for (let i = 0; i < 40; ++i) {
-        let scene = new THREE.Scene()
+      let vertices = new THREE.BoxGeometry(200, 200, 200, 16, 16, 16).vertices
 
-        const element = document.createElement('div')
-        element.className = 'list-item'
-        element.innerHTML = template.replace('$', i + 1)
+      let positions = new Float32Array(vertices.length * 3)
+      let colors = new Float32Array(vertices.length * 3)
+      let sizes = new Float32Array(vertices.length)
 
-        scene.userData.element = element.querySelector('.scene')
-        content.appendChild(element)
+      let vertex
+      let color = new THREE.Color()
 
-        const camera = new THREE.PerspectiveCamera(50, 1, 1, 10)
-        camera.position.z = 2
-        scene.userData.camera = camera
+      for (let i = 0, l = vertices.length; i < l; i++) {
+        vertex = vertices[i]
+        vertex.toArray(positions, i * 3)
 
-        const controls = new THREE.OrbitControls(scene.userData.camera, scene.userData.element)
-        controls.minDistance = 2
-        controls.maxDistance = 5
-        controls.enablePan = false
-        controls.enableZoom = true
-        scene.userData.controls = controls
+        color.setHSL(0.01 + 0.1 * (i / l), 1.0, 0.5)
+        color.toArray(colors, i * 3)
 
-        const geometry = geometries[geometries.length * Math.random() | 0]
-
-        const material = new THREE.MeshStandardMaterial({
-          color: new THREE.Color().setHSL(Math.random(), 1, 0.75),
-          roughness: 0.5,
-          metalness: 0,
-          flatShading: true,
-          // wireframe: true,
-        })
-
-        scene.add(new THREE.Mesh(geometry, material))
-
-        scene.add(new THREE.HemisphereLight(0xaaaaaa, 0x444444))
-        const light = new THREE.DirectionalLight(0xffffff, 0.5)
-        light.position.set(1, 1, 1)
-        scene.add(light)
-
-        scenes.push(scene)
+        sizes[i] = PARTICLE_SIZE * 0.5
       }
 
-      renderer = new THREE.WebGLRenderer({
-        canvas: canvas,
-        antialias: true
+      let geometry = new THREE.BufferGeometry()
+      geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3))
+      geometry.addAttribute('customColor', new THREE.BufferAttribute(colors, 3))
+      geometry.addAttribute('size', new THREE.BufferAttribute(sizes, 1))
+
+      let material = new THREE.ShaderMaterial({
+        uniforms: {
+          color: { value: new THREE.Color(0xffffff) },
+          texture: { value: new THREE.TextureLoader().load('textures/disc.png') }
+        },
+        vertexShader: document.getElementById('vertexshader').textContent,
+        fragmentShader: document.getElementById('fragmentshader').textContent,
+        alphaTest: 0.9
       })
-      renderer.setClearColor(0xffffff, 1)
+
+      particles = new THREE.Points(geometry, material)
+      scene.add(particles)
+
+      renderer = new THREE.WebGLRenderer()
       renderer.setPixelRatio(window.devicePixedRatio)
+      renderer.setSize(window.innerWidth, window.innerHeight)
+      container.appendChild(renderer.domElement)
+
+      raycaster = new THREE.Raycaster()
+      mouse = new THREE.Vector2()
+
+      stats = new Stats()
+      container.appendChild(stats.dom)
+
+      window.addEventListener('resize', onWindowResize, false)
+      document.addEventListener('mousemove', onDocumentMouseMove, false)
     }
     
-    function updateSize() {
-      let width = canvas.clientWidth
-      let height = canvas.clientHeight
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight
+      camera.updateProjectionMatrix()
 
-      if (canvas.width !== width || canvas.height !== height) {
-        renderer.setSize(width, height, false)
-      }
+      renderer.setSize(window.innerWidth, window.innerHeight)
+    }
+
+    function onDocumentMouseMove(event) {
+      event.preventDefault()
+
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+      mouse.y = (event.clientY / window.innerHeight) * 2 + 1
     }
 
     function animate() {
-      render()
       requestAnimationFrame(animate)
+      render()
+      stats.update()
     }
 
     function render() {
-      updateSize()
-      canvas.style.transform = `translateY(${ window.scrollY }px)`
+      particles.rotation.x += 0.0005
+      particles.rotation.y += 0.001
 
-      renderer.setClearColor(0xffffff)
-      renderer.setScissorTest(false)
-      renderer.clear()
+      let geometry = particles.geometry
+      let attributes = geometry.attributes
 
-      renderer.setClearColor(0xe0e0e0)
-      renderer.setScissorTest(true)
+      raycaster.setFromCamera(mouse, camera)
 
-      scenes.forEach(function(scene) {
-        scene.children[0].rotation.y = Date.now() * 0.001
+      intersects = raycaster.intersectObject(particles)
 
-        let element = scene.userData.element
-        
-        let rect = element.getBoundingClientRect()
+      if (intersects.length > 0) {
+        if (INTERSECTED != intersects[0].index) {
+          attributes.size.array[INTERSECTED] = PARTICLE_SIZE
 
-        if (rect.bottom < 0 || rect.top > renderer.domElement.clientHeight || rect.right < 0 || rect.left > renderer.domElement.clientWidth) {
-          return
+          INTERSECTED = intersects[0].index
+
+          attributes.size.array[INTERSECTED] = PARTICLE_SIZE * 1.25
+          attributes.size.needsUpdate = true
         }
+      } else if (INTERSECTED !== null) {
+        attributes.size.array[INTERSECTED] = PARTICLE_SIZE
+        attributes.size.needsUpdate = true
+        INTERSECTED = null
+      }
 
-        const width = rect.right - rect.left
-        const height = rect.bottom - rect.top
-        const left = rect.left
-        const top = rect.top
-
-        renderer.setViewport(left, top, width, height)
-        renderer.setScissor(left, top, width, height)
-
-        const camera = scene.userData.camera
-
-        renderer.render(scene, camera)
-      })
+      renderer.render(scene, camera)
     }
   </script>
 </body>
