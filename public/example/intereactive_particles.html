@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Intereactive particles</title>
+<meta name="description" content="Demonstration of grouping content in pure CSS parallax scrolling website">
+<script src="js/three.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/OrbitControls.js"></script>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    color: #000;
+    font-family: Monospace;
+    font-size: 13px;
+    background-color: #fff;
+    margin: 0;
+  }
+  #info {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    padding: 5px;
+    text-align: center;
+  }
+</style>
+</head>
+
+<body>
+  <div id="container"></div>
+  <div id="info"></div>
+
+  <script type="x-shader/x-vertex" id="vertexshader">
+    attribute float size;
+    attribute vec3 customColor;
+
+    varying vec3 vColor;
+
+    void main() {
+      vColor = customColor;
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      gl_PointSize = size * (300.0 / -mvPosition.z);
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  </script>
+
+  <script type="x-shader/x-fragment" id="fragmentshader">
+    uniform vec3 color;
+    uniform sampler2D texture;
+
+    varying vec3 vColor;
+
+    void main() {
+      gl_FragColor = vec4(color * vColor, 1.0);
+      gl_FragColor = gl_FragColor * texture2D(texture, gl_PointCoord);
+      if (gl_FragColor.a < ALPHATEST) discard;
+    }
+  </script>
+  
+  <script>
+    let renderer, scene, camera, stats
+    let particles, uniforms
+
+    const PARTICLE_SIZE = 20
+
+    let raycaster, intersects
+    let mouse, INTERSECTED
+
+    init()
+    animate()
+
+    function init() {
+      container = document.getElementById('container')
+
+      scene = new THREE.Scene()
+
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000)
+      camera.position.z = 250
+
+      let vertices = new THREE.BoxGeometry(200, 200, 200, 16, 16, 16).vertices
+
+      let positions = new Float32Array(vertices.length * 3)
+      let colors = new Float32Array(vertices.length * 3)
+      let sizes = new Float32Array(vertices.length)
+
+      let vertex
+      let color = new THREE.Color()
+
+      for (let i = 0, l = vertices.length; i < l; i++) {
+        vertex = vertices[i]
+        vertex.toArray(positions, i * 3)
+
+        color.setHSL(0.01 + 0.1 * (i / l), 1.0, 0.5)
+        color.toArray(colors, i * 3)
+
+        sizes[i] = PARTICLE_SIZE * 0.5
+      }
+
+      let geometry = new THREE.BufferGeometry()
+      geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3))
+      geometry.addAttribute('customColor', new THREE.BufferAttribute(colors, 3))
+      geometry.addAttribute('size', new THREE.BufferAttribute(sizes, 1))
+
+      let material = new THREE.ShaderMaterial({
+        uniforms: {
+          color: { value: new THREE.Color(0xffffff) },
+          texture: { value: new THREE.TextureLoader().load('textures/disc.png') }
+        },
+        vertexShader: document.getElementById('vertexshader').textContent,
+        fragmentShader: document.getElementById('fragmentshader').textContent,
+        alphaTest: 0.9
+      })
+
+      particles = new THREE.Points(geometry, material)
+      scene.add(particles)
+
+      renderer = new THREE.WebGLRenderer()
+      renderer.setPixelRatio(window.devicePixedRatio)
+      renderer.setSize(window.innerWidth, window.innerHeight)
+      container.appendChild(renderer.domElement)
+
+      raycaster = new THREE.Raycaster()
+      mouse = new THREE.Vector2()
+
+      stats = new Stats()
+      container.appendChild(stats.dom)
+
+      window.addEventListener('resize', onWindowResize, false)
+      document.addEventListener('mousemove', onDocumentMouseMove, false)
+    }
+    
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight
+      camera.updateProjectionMatrix()
+
+      renderer.setSize(window.innerWidth, window.innerHeight)
+    }
+
+    function onDocumentMouseMove(event) {
+      event.preventDefault()
+
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+      mouse.y = (event.clientY / window.innerHeight) * 2 + 1
+    }
+
+    function animate() {
+      requestAnimationFrame(animate)
+      render()
+      stats.update()
+    }
+
+    function render() {
+      particles.rotation.x += 0.0005
+      particles.rotation.y += 0.001
+
+      let geometry = particles.geometry
+      let attributes = geometry.attributes
+
+      raycaster.setFromCamera(mouse, camera)
+
+      intersects = raycaster.intersectObject(particles)
+
+      if (intersects.length > 0) {
+        if (INTERSECTED != intersects[0].index) {
+          attributes.size.array[INTERSECTED] = PARTICLE_SIZE
+
+          INTERSECTED = intersects[0].index
+
+          attributes.size.array[INTERSECTED] = PARTICLE_SIZE * 1.25
+          attributes.size.needsUpdate = true
+        }
+      } else if (INTERSECTED !== null) {
+        attributes.size.array[INTERSECTED] = PARTICLE_SIZE
+        attributes.size.needsUpdate = true
+        INTERSECTED = null
+      }
+
+      renderer.render(scene, camera)
+    }
+  </script>
+</body>
+</html>
